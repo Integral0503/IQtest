@@ -22,13 +22,14 @@ const questions = [
 ];
 
 let current = 0;
-let correct = 0;
+let selectedAnswers = [];
 
 const startView = document.querySelector("#startView");
 const quizView = document.querySelector("#quizView");
 const resultView = document.querySelector("#resultView");
 const startButton = document.querySelector("#startButton");
 const retryButton = document.querySelector("#retryButton");
+const backButton = document.querySelector("#backButton");
 const questionCount = document.querySelector("#questionCount");
 const progressFill = document.querySelector("#progressFill");
 const questionText = document.querySelector("#questionText");
@@ -57,6 +58,7 @@ function renderQuestion() {
   const item = questions[current];
   questionCount.textContent = `${current + 1} / ${questions.length}`;
   progressFill.style.width = `${(current / questions.length) * 100}%`;
+  backButton.disabled = current === 0;
   questionText.textContent = item.q;
   visual.innerHTML = item.v.map(makeVisual).join("");
   answers.innerHTML = "";
@@ -65,19 +67,28 @@ function renderQuestion() {
     button.className = "answer-button";
     button.type = "button";
     button.textContent = answer;
+    if (selectedAnswers[current] === index) {
+      button.classList.add("selected");
+    }
     button.addEventListener("click", () => chooseAnswer(index));
     answers.appendChild(button);
   });
 }
 
 function chooseAnswer(index) {
-  if (index === questions[current].c) correct += 1;
+  selectedAnswers[current] = index;
   current += 1;
   if (current >= questions.length) {
     renderResult();
   } else {
     renderQuestion();
   }
+}
+
+function goBack() {
+  if (current === 0) return;
+  current -= 1;
+  renderQuestion();
 }
 
 function resultLevel(score) {
@@ -88,6 +99,9 @@ function resultLevel(score) {
 }
 
 function renderResult() {
+  const correct = selectedAnswers.reduce((total, answer, index) => {
+    return total + (answer === questions[index].c ? 1 : 0);
+  }, 0);
   const ratio = correct / questions.length;
   const score = Math.round(82 + ratio * 58);
   const [title, copy] = resultLevel(score);
@@ -117,14 +131,16 @@ function renderResult() {
 
 startButton.addEventListener("click", () => {
   current = 0;
-  correct = 0;
+  selectedAnswers = [];
   renderQuestion();
   show(quizView);
 });
 
+backButton.addEventListener("click", goBack);
+
 retryButton.addEventListener("click", () => {
   current = 0;
-  correct = 0;
+  selectedAnswers = [];
   renderQuestion();
   show(quizView);
 });
